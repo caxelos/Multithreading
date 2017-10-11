@@ -2,9 +2,10 @@
 
 struct buffinfo {
   int size;
-  volatile int rdptr;
-  volatile int wrptr;
-  volatile int full;
+  int rdptr;
+  int wrptr;
+  int full;
+  int empty;
 };
 typedef struct buffinfo *bufferT;
 
@@ -12,7 +13,7 @@ volatile bufferT buff = NULL;
 int pipefd[2];
 int fdin;
 int fdout;
-int endOfFile = 0;
+volatile int endOfFile = 0;
 
 void pipe_init(int size)  {
   buff = (bufferT)malloc( sizeof(bufferT) );
@@ -23,8 +24,8 @@ void pipe_init(int size)  {
   buff->size=size;  
   buff->rdptr=0;
   buff->wrptr=0;
-  buff->full =0;
-
+  buff->full =size;//semaphore
+  buff->empty=0;//semaphore
   if ( pipe(pipefd) == -1)  {
     printf("Error at pipe\n");
     exit(-1);  
@@ -34,20 +35,15 @@ void pipe_init(int size)  {
 }
 
 
-
 void pipe_write(char c)  { 
   int nxt_wr_ptr = (buff->wrptr + 1)%buff->size;
   
   //allaksa apo nxt se curr
-  while ((buff->wrptr==buff->rdptr))  {
-    if (buff->full == 0) {
-      buff->full = 1;
-      break;
-    } 
-    printf("write: buffer is full\n");
-  }   
-  
-  //arxi krisimou tmimatos-grapse ston agwgo    
+  while (buff->full == 0)  {
+ 
+  } 
+  buff->full--;
+  //arxi krisimou tmimatos-grapse ston agwgo   
   if (write (pipefd[1], &c,1) != 1)  {//circbuffer[wrptr] = c;
     printf("pipe_write:Error writing 1 byte:\n");
     exit(-1);
@@ -55,6 +51,8 @@ void pipe_write(char c)  {
   //telos krisimou tmimatos-auksise ton write-pointer
   printf("write: %c, pos: %d\n", c,buff->wrptr);
   buff->wrptr = nxt_wr_ptr;
+  
+  buff->empty++;
  
     
   return ;
@@ -66,22 +64,18 @@ int pipe_read(void)  {
   char c;  
   int bytesWrite;
 
-  //arxi krisimou tmimatos
-  while (buff->wrptr == buff->rdptr) {//if empty
-    if (buff->full == 1)  {
-      buff->full = 0;
-      break ;
-    }
+  while (buff->empty == 0) {//if empty
     if (endOfFile == 1)
-      return 0;  
+      return 0;    
   }
-  
+  buff->empty--;
+  //arxi krisimou tmimatos
   if (1 != read (pipefd[0], &c, 1) ) {
     printf("Error reading 1 Byte\n");
     exit(-1);
   }
   
-  //telos krisimou kwdika - auksise ton read-pointer
+  //telos krisimou kwdika - auksise ton read-pointer 
   bytesWrite = write(fdout, &c, sizeof(char) );
   if (bytesWrite == -1 )  {
     printf("Write error at writer() function.Exiting\n");
@@ -92,6 +86,7 @@ int pipe_read(void)  {
   printf("read: %c, pos: %d\n", c,buff->rdptr);
   buff->rdptr = (buff->rdptr+1)%buff->size;
   
+  buff->full++;
   return 1;  
 }
 

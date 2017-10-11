@@ -1,5 +1,3 @@
-// ./askisi1 10 input.txt output.txt
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>

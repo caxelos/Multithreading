@@ -3,13 +3,13 @@
 volatile int join_threads=0;
 extern int fdin;
 extern int fdout;
-extern int endOfFile;
+extern volatile int endOfFile;
 
 
 void *thread_pipereader(void *filename)  {
    int readval;
    
-   fdout = open( (char *)filename , O_WRONLY | O_CREAT, S_IRUSR ); 
+   fdout = open( (char *)filename , O_RDWR | O_CREAT, S_IRUSR ); 
    if (fdout == -1 )  {
      printf("Error opening output file. Exiting\n");
      return NULL;
@@ -17,7 +17,6 @@ void *thread_pipereader(void *filename)  {
     
    while(1){
       readval = pipe_read();
-      printf("ola ok %d\n", readval);
       if (readval == 0)  {
         printf("Destroy pipe\n");
         pipe_close();
@@ -64,9 +63,9 @@ int main(int argc, char **argv)  {
   }
   pipewriter( argv[2] );  
   
-  //while (join_threads == 0) {
-    printf("poulo again\n");  
- // }
+  while (join_threads == 0) {
+    printf("poulo again\n");
+  }
   /*
   if (pthread_join(tid1,NULL) != 0) {
     printf("error at read thread\n");
