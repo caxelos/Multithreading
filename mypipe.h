@@ -1,10 +1,11 @@
+// ./askisi1 10 input.txt output.txt
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-
-#define BUF_SIZE 10
+#include <fcntl.h>
 
 void pipe_close(void);
 int pipe_read(void);
