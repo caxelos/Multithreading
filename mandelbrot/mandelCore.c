@@ -49,8 +49,67 @@ static int isMandelbrot(double re, double im, int maxIterations) {
 
 }
 
-//void mandel_Calc(mandel_Pars *pars, int maxIterations, int res[]) {
-void *mandel_Calc(void *params) {
+
+struct task {
+  calcParamsT *calcParams;
+  pthread_t tuid;
+  int status;
+};
+typedef struct task *taskT;
+
+
+void init_threads(int numOfThreads)  {
+  int i;
+  pthread_t *tuids=NULL;
+  taskT *tasks;
+
+  //allocate memory for the N structs taskT
+  tasks = (taskT *)malloc(numOfThreads * sizeof(taskT) );
+  if (tasks == NULL)  {
+    printf("Error allocating task[%d]. Exiting\n");
+    return -1;
+  }
+
+  //allocate and initialize struct fields
+  for (i = 0; i < numOfThreads; i++)  {
+    tasks[i]->status = NOT_WORKING;
+    tasks[i]->calcParams = (calcParamsT *)malloc( sizeof(calcParams) );
+    if (tasks[i]->calcParams == NULL)  {
+      printf("Error creating params %d. Exiting\n", i);
+      exit(-1);
+    }
+    if ( pthread_create( &tasks[i]->tuid, NULL, (void *)waitUntilGetTask, NULL) != 0) {
+      printf("Error creating thread %d. Exiting\n", i);
+      exit(-1);
+    }
+  }
+
+  //allocate memory for the parameters of the calculation function
+  for (i = 0; i < numOfThreads; i++) { 
+    if ( pthread_create( &tuids[i], NULL, (void *)waitUntilGetTask, NULL) != 0) {
+      printf("Error creating reader thread\n");
+      exit(-1);
+    }
+  } 
+
+
+}
+
+
+void *waitUntilGetTask(void *args)  {
+
+  while (1)  {
+    if (status == WORKING)  {
+      mandel_Calc( pars, maxIterations, res[] );
+      status = NOT_WORKING;
+    }  
+  }
+
+  return NULL;
+}
+
+
+void mandel_Calc(mandel_Pars *pars, int maxIterations, int res[]) {
   int x,y;
   long double re,im; 
 
