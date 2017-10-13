@@ -21,7 +21,7 @@ static unsigned long curC;
 static Window win;
 static GC gc;
 
-extern taskT *tasks;
+extern taskT tasks[4];
 
 /* basic win management rountines */
 
@@ -127,7 +127,8 @@ int main(int argc, char *argv[]) {
   int xoff,yoff;
   long double reEnd,imEnd,reCenter,imCenter;
   int next;
-  
+ 
+
   printf("\n");
   printf("This program starts by drawing the default Mandelbrot region\n");
   printf("When done, you can click with the mouse on an area of interest\n");
@@ -169,9 +170,9 @@ int main(int argc, char *argv[]) {
 
   level = 1;
 
-  tasks = init_threads(NUM_OF_THREADS);
-  if (tasks == NULL)
+  if (init_threads(NUM_OF_THREADS) == -1) {
     return -1;
+  }
 
   while (1) {
 
@@ -185,9 +186,9 @@ int main(int argc, char *argv[]) {
      
      // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
      next = find_next_available_thread(NUM_OF_THREADS);
-     tasks[next]->res  = &res[i*slices[i].imSteps*slices[i].reSteps] ;
-     tasks[next]->pars= slices[i];
-     tasks[next]->status = WORKING; 
+     tasks[next].res  = &res[i*slices[i].imSteps*slices[i].reSteps] ;
+     tasks[next].pars= slices[i];
+     tasks[next].status = WORKING; 
      
       printf("done\n");
       for (j=0; j<slices[i].imSteps; j++) {

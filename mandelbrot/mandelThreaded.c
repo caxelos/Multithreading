@@ -5,12 +5,12 @@
 #define WORKING 1
 #define NOT_WORKING 2
 
-taskT *tasks = NULL;
+taskT tasks[4];
 int find_next_available_thread(int numOfThreads)  {
   static int i = 0;
   
   while (1)  {
-    if (tasks[i]->status == NOT_WORKING)  {
+    if (tasks[i].status == NOT_WORKING)  {
       return i;
     }
     i = (i+1)%numOfThreads;
@@ -19,44 +19,31 @@ int find_next_available_thread(int numOfThreads)  {
   return 0;
 }
 
-taskT *init_threads(int numOfThreads)  {
+int init_threads(int numOfThreads)  {
   int i;
   
-  //allocate memory for the N structs taskT
-  tasks = (taskT *)malloc(numOfThreads * sizeof(taskT) );
-  if (tasks == NULL)  {
-    printf("Error creating tasks. Exiting\n");
-    return NULL;
-  }
-
   //allocate and initialize struct fields
   for (i = 0; i < numOfThreads; i++)  {
-    tasks[i]->status = NOT_WORKING;
-/*
-    tasks[i]->calc = (calcParamsT *)malloc(sizeof(struct calcParams) );
-    if (tasks[i]->calc == NULL)  {
-      printf("Error creating params %d. Exiting\n", i);
-      return (-1);
-    }*/
-    if ( pthread_create( &tasks[i]->tid, NULL, (void *)waitUntilGetTask, (void *)tasks[i]) != 0) {
+    tasks[i].status = NOT_WORKING;
+
+    if ( pthread_create( &tasks[i].tid, NULL, (void *)waitUntilGetTask, (void *)&tasks[i]) != 0) {
       printf("Error creating thread %d. Exiting\n", i);
-      return NULL;
+      return -1;
     }
   }
 
-  return NULL;
+  return 0;
 }
 
 
 
 void *waitUntilGetTask(void *newtask)  {
 
-  taskT *task = (taskT *)newtask;
+  taskT *slave = (taskT *)newtask;
   while (1)  {
-    if ( (*task)->status == WORKING)  {
-      //mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
-      mandel_Calc( &(*task)->pars, (*task)->maxIterations, (*task)->res );
-      (*task)->status = NOT_WORKING;
+    if ( slave->status == WORKING)  {
+      mandel_Calc( &(slave->pars), slave->maxIterations, slave->res );
+       slave->status = NOT_WORKING;
     }  
   }
 

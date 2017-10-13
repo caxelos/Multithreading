@@ -9,9 +9,9 @@ struct task {
   pthread_t tid;
   int status;
 };
-typedef struct task *taskT;
+typedef struct task taskT;
 
-extern taskT *init_threads(int NUM_OF_THREADS) ;
+extern int init_threads(int NUM_OF_THREADS) ;
 
 extern void *waitUntilGetTask(void *newtask);
 
