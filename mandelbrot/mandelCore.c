@@ -1,20 +1,9 @@
 #include "mandelCore.h"
 
-
-pars.reSteps = WinW; /* never changes */
-pars.imSteps = WinH; /* never changes *
-  /* default mandelbrot region */
-
-  pars.reBeg = -2.0;
-  reEnd = 1.0;
-  pars.imBeg = -1.5;
-  imEnd = 1.5;
-  pars.reInc = (reEnd - pars.reBeg) / pars.reSteps;
-  pars.imInc = (imEnd - pars.imBeg) / pars.imSteps;
-
 void mandel_Slice(mandel_Pars *pars, int n, mandel_Pars slices[]) {
   int i;
   long double imBeg;
+  
   
   imBeg = pars->imBeg;
   for (i=0; i<n; i++) {
@@ -43,71 +32,10 @@ static int isMandelbrot(double re, double im, int maxIterations) {
     zi = 2 * zr * zi + ci;
     zr = xsq - ysq + cr;
     n++;
-    printf("%ld\n", xsq + ysq);
   }
   return(n);
 
 }
-
-
-struct task {
-  calcParamsT *calcParams;
-  pthread_t tuid;
-  int status;
-};
-typedef struct task *taskT;
-
-
-void init_threads(int numOfThreads)  {
-  int i;
-  pthread_t *tuids=NULL;
-  taskT *tasks;
-
-  //allocate memory for the N structs taskT
-  tasks = (taskT *)malloc(numOfThreads * sizeof(taskT) );
-  if (tasks == NULL)  {
-    printf("Error allocating task[%d]. Exiting\n");
-    return -1;
-  }
-
-  //allocate and initialize struct fields
-  for (i = 0; i < numOfThreads; i++)  {
-    tasks[i]->status = NOT_WORKING;
-    tasks[i]->calcParams = (calcParamsT *)malloc( sizeof(calcParams) );
-    if (tasks[i]->calcParams == NULL)  {
-      printf("Error creating params %d. Exiting\n", i);
-      exit(-1);
-    }
-    if ( pthread_create( &tasks[i]->tuid, NULL, (void *)waitUntilGetTask, NULL) != 0) {
-      printf("Error creating thread %d. Exiting\n", i);
-      exit(-1);
-    }
-  }
-
-  //allocate memory for the parameters of the calculation function
-  for (i = 0; i < numOfThreads; i++) { 
-    if ( pthread_create( &tuids[i], NULL, (void *)waitUntilGetTask, NULL) != 0) {
-      printf("Error creating reader thread\n");
-      exit(-1);
-    }
-  } 
-
-
-}
-
-
-void *waitUntilGetTask(void *args)  {
-
-  while (1)  {
-    if (status == WORKING)  {
-      mandel_Calc( pars, maxIterations, res[] );
-      status = NOT_WORKING;
-    }  
-  }
-
-  return NULL;
-}
-
 
 void mandel_Calc(mandel_Pars *pars, int maxIterations, int res[]) {
   int x,y;

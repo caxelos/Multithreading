@@ -5,16 +5,23 @@
 #include <X11/Xutil.h>
 
 #include "mandelCore.h"
+#include "mandelThreaded.h"
 
 #define WinW 300
 #define WinH 300
 #define ZoomStepFactor 0.5
 #define ZoomIterationFactor 2
 
+#define NUM_OF_THREADS 4
+#define WORKING 1
+#define NOT_WORKING 2
+
 static Display *dsp = NULL;
 static unsigned long curC;
 static Window win;
 static GC gc;
+
+extern taskT *tasks;
 
 /* basic win management rountines */
 
@@ -119,10 +126,8 @@ int main(int argc, char *argv[]) {
   int i,j,x,y,nofslices,maxIterations,level,*res;
   int xoff,yoff;
   long double reEnd,imEnd,reCenter,imCenter;
-  pthread_t *tids;
-
-
-
+  int next;
+  
   printf("\n");
   printf("This program starts by drawing the default Mandelbrot region\n");
   printf("When done, you can click with the mouse on an area of interest\n");
@@ -146,12 +151,11 @@ int main(int argc, char *argv[]) {
   printf("enter max iterations (50): ");
   scanf("%d",&maxIterations);
   printf("enter no of slices: ");
-  scanf("%d",&nofslices);//40
+  scanf("%d",&nofslices);
   
   /* adjust slices to divide win height */
 
   while (WinH % nofslices != 0) { nofslices++;}
-  //50
 
   /* allocate slice parameter and result arrays */
   
@@ -165,37 +169,28 @@ int main(int argc, char *argv[]) {
 
   level = 1;
 
-  tuids = (pthread_t *)malloc( nofslices*sizeof(pthread_t) );
-  if (tuids == NULL)  {
-    printf("Error allocating thread memory. Exiting\n");
+  tasks = init_threads(NUM_OF_THREADS);
+  if (tasks == NULL)
     return -1;
-  }
 
-  while (1) { 
+  while (1) {
 
     clearWin();
- 
+
     mandel_Slice(&pars,nofslices,slices);
     
     y=0;
+    for (i=0; i<nofslices; i++) {
+      printf("starting slice nr. %d\n",i+1);
      
-    
-    for (i=0; i<nofslices; i++) {//multithread
-      printf("starting slice nr. %d\n",i+1);  
-      //mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
-
-      if (pthread_create(&tuids,NULL,(void *)mandel_Calc,(void *)argv[3]) != 0) {
-        printf("Error creating reader thread\n");
-        exit(-1);
-      }   
-      
-
-    } 
-     //parea potelesmata
+     // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
+     next = find_next_available_thread(NUM_OF_THREADS);
+     tasks[next]->res  = &res[i*slices[i].imSteps*slices[i].reSteps] ;
+     tasks[next]->pars= slices[i];
+     tasks[next]->status = WORKING; 
+     
       printf("done\n");
-
-
-      for (j=0; j<slices[i].imSteps; j++) {//single-thread
+      for (j=0; j<slices[i].imSteps; j++) {
 	for (x=0; x<slices[i].reSteps; x++) {
           setColor(pickColor(res[y*slices[i].reSteps+x],maxIterations));
           drawPoint(x,y);

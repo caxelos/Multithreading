@@ -1,0 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
+struct task {
+  mandel_Pars pars;//param
+  int *res;//param
+  int maxIterations;//param
+  pthread_t tid;
+  int status;
+};
+typedef struct task *taskT;
+
+extern taskT *init_threads(int NUM_OF_THREADS) ;
+
+extern void *waitUntilGetTask(void *newtask);
+
+extern int find_next_available_thread(int numOfThreads);
