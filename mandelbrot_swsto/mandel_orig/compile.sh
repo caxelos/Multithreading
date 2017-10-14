@@ -1,0 +1,1 @@
+gcc -Wall -g mandelGUI.c mandelCore.c -o mandelGUI -L /usr/X11R6/lib -lX11
