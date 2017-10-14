@@ -12,7 +12,7 @@ typedef struct quickArgs quickArgsT;
 struct task {
   pthread_t tid;
   quickArgsT *args;
-  struct task *taskNext;
+  struct task *next;
 };
 typedef struct task taskT;  
 
@@ -27,7 +27,7 @@ void destroy_task_list(void) {
   taskT *curr = taskHead; 
   taskT *prev = NULL;
   
-  for (curr = head; curr != NULL; curr = curr->next ) {
+  for (curr = taskHead; curr != NULL; curr = curr->next ) {
     prev = curr;
     curr = curr->next;
     free(prev);
@@ -54,7 +54,7 @@ void insert_to_task_list(taskT *newtask)  {
 
 }
 
-taskT *createArgs(int left, int right)  {
+taskT *createTask(int left, int right)  {
   quickArgsT *newArgs = NULL;
   taskT *newtask = NULL;
   
@@ -73,20 +73,27 @@ taskT *createArgs(int left, int right)  {
   }    
   newtask->args = newArgs;
   newtask->next = NULL;  
+
+
+  //arxi krisimou
   insert_to_task_list(newtask);
-  
+  //telos krisimou
   return newtask;
 }
 
-void *myquicksort(int *array, int left, int right )  {
-  int i = left-1;
-  int j = right;
-  int o = array[right];
+//void *myquicksort(int *array, int left, int right )  {
+void *myquicksort(void *args) {
+  taskT *mytask = (taskT *)args;
+  
+  int i = mytask->args->left;//left-1;
+  int j = mytask->args->right;
+  int o = array[mytask->args->right];
   int temp;
+  
   taskT *newLeftTask = NULL;
   taskT *newRightTask = NULL;
 
-      
+  printf("ok");    
   while (1)  {
     while ( array[++i] < o )  {    
     }  
@@ -103,16 +110,17 @@ void *myquicksort(int *array, int left, int right )  {
   }
   
   temp = array[i];
-  array[i] = array[right];
-  array[right] = temp;
+  array[i] = array[mytask->args->right];
+  array[mytask->args->right] = temp;
 
   
-  if (left < i-1)  {
-    newLeftTask = createTask(left, i-1);
+  if (mytask->args->left < i-1)  {
+    
+    newLeftTask = createTask(mytask->args->left, i-1);
     if (newLeftTask == NULL)
       return NULL;
       
-    if (pthread_create( &(newLeftTask->tid), NULL, (void *)myquicksort, (void *)newLeftTask->args ) != 0)  {
+    if (pthread_create( &(newLeftTask->tid), NULL, (void *)myquicksort, (void *)newLeftTask) != 0)  {
       printf("Error creating left thread. Exiting\n");
       return NULL;
     }
@@ -121,12 +129,12 @@ void *myquicksort(int *array, int left, int right )  {
     return NULL;
   }  
     
-  if (i+1 < right)  {
-    newRightTask = createTask(i+1, right);
+  if (i+1 < mytask->args->right)  {
+    newRightTask = createTask(i+1, mytask->args->right);
     if (newRightTask == NULL)
       return NULL;
   
-    if ( pthread_create( &(newRightTask->tid), NULL, (void *)myquicksort, (void *)newRightTask->args) != 0 ) {
+    if ( pthread_create( &(newRightTask->tid), NULL, (void *)myquicksort, (void *)newRightTask) != 0 ) {
       printf("Error creating right thread. Exiting\n");
       return NULL;
     }
@@ -140,6 +148,8 @@ void *myquicksort(int *array, int left, int right )  {
 }
 
 int main(int argc, char *argv[])  {
+  taskT mainTask;
+  quickArgsT *args;
   int i;
   
   //init array
@@ -148,7 +158,17 @@ int main(int argc, char *argv[])  {
   } 
 
 
-  myquicksort(array, 0, MAX_SIZE-1);
+  //init main thread
+  args = (quickArgsT *)malloc( sizeof(quickArgsT) );
+  if (args == NULL)  {
+    printf("Error allocating main thread. Exiting\n");
+    return -1;
+  }
+  args->left = 0;
+  args->right = MAX_SIZE-1;
+  mainTask.args = args;
+  
+  myquicksort(&mainTask);
   //print final array
   for (i = 0; i < MAX_SIZE; i++)  {
     printf("%d, ", array[i]);
@@ -158,5 +178,3 @@ int main(int argc, char *argv[])  {
   
   return 0;
 }
-
-
