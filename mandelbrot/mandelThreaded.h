@@ -3,7 +3,7 @@
 
 
 struct task {
-  mandel_Pars pars;//param
+  mandel_Pars *pars;//param
   int *res;//param
   int maxIterations;//param
   pthread_t tid;
@@ -16,3 +16,5 @@ extern int init_threads(int NUM_OF_THREADS) ;
 extern void *waitUntilGetTask(void *newtask);
 
 extern int find_next_available_thread(int numOfThreads);
+
+extern int collectResults(int numOfThreads); 

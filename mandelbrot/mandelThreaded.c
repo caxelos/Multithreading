@@ -4,13 +4,15 @@
 
 #define WORKING 1
 #define NOT_WORKING 2
+#define DONE 3
 
 taskT tasks[4];
+
 int find_next_available_thread(int numOfThreads)  {
   static int i = 0;
   
   while (1)  {
-    if (tasks[i].status == NOT_WORKING)  {
+    if (tasks[i].status == NOT_WORKING || tasks[i].status == DONE)  {
       return i;
     }
     i = (i+1)%numOfThreads;
@@ -19,6 +21,21 @@ int find_next_available_thread(int numOfThreads)  {
   return 0;
 }
 
+int collectResults(int numOfThreads)  {
+  static int i = 0;
+
+
+  while (1)  {
+    if (tasks[i].status == DONE)
+      return i;
+
+    i = (i+1)%numOfThreads;
+  }
+
+  return 0;
+
+}
+ 
 int init_threads(int numOfThreads)  {
   int i;
   
@@ -37,15 +54,16 @@ int init_threads(int numOfThreads)  {
 
 
 
-void *waitUntilGetTask(void *newtask)  {
+void *waitUntilGetTask(void *newtask)  {    
+ // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]) {
 
   taskT *slave = (taskT *)newtask;
   while (1)  {
     if ( slave->status == WORKING)  {
-      mandel_Calc( &(slave->pars), slave->maxIterations, slave->res );
-       slave->status = NOT_WORKING;
+      mandel_Calc( slave->pars, slave->maxIterations, slave->res );
+      slave->status = DONE;
     }  
   }
 
-
+ return NULL; 
 }
