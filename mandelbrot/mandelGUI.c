@@ -12,7 +12,7 @@
 #define ZoomStepFactor 0.5
 #define ZoomIterationFactor 2
 
-#define NUM_OF_THREADS 4
+
 #define WORKING 1
 #define NOT_WORKING 2
 #define DONE 3
@@ -103,6 +103,7 @@ void getMouseCoords(int *x, int *y) {
 void setColor(char *name) {
   XColor clr1,clr2;
 
+
   if (!XAllocNamedColor(dsp, DefaultColormap(dsp, DefaultScreen(dsp)), name, &clr1, &clr2)) {
     printf("failed\n"); return;
   }
@@ -127,7 +128,7 @@ int main(int argc, char *argv[]) {
   int i,j,x,y,nofslices,maxIterations,level,*res;
   int xoff,yoff;
   long double reEnd,imEnd,reCenter,imCenter;
-  int next;
+  int next, done = 0;
  
 
   printf("\n");
@@ -170,13 +171,13 @@ int main(int argc, char *argv[]) {
   openWin(argv[0], WinW, WinH);
 
   level = 1;
-
-  if (init_threads(NUM_OF_THREADS) == -1) {
+  
+  if (init_threads(nofslices) == -1) {
     return -1;
   }
 
   while (1) {
-
+    
     clearWin();
 
     mandel_Slice(&pars,nofslices,slices);
@@ -186,22 +187,36 @@ int main(int argc, char *argv[]) {
       printf("starting slice nr. %d\n",i+1);
      
      // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
-     next = find_next_available_thread(NUM_OF_THREADS);
-     tasks[next].pars= &slices[i];//1st
-     tasks[next].maxIterations = maxIterations;//2nd
-     tasks[next].res=&res[i*slices[i].imSteps*slices[i].reSteps];//3rd
-     tasks[next].status = WORKING;//signal to start 
+     tasks[i].pars= &slices[i];//1st
+     tasks[i].maxIterations = maxIterations;//2nd
+     tasks[i].res=&res[i*slices[i].imSteps*slices[i].reSteps];//3rd 
     }
 
+    //give signal to start
     for (i=0; i<nofslices; i++) {
-      printf("done\n");//opou next to i
-      for (j=0; j<slices[i].imSteps; j++) {
-	for (x=0; x<slices[i].reSteps; x++) {
-          setColor(pickColor(res[y*slices[i].reSteps+x],maxIterations));
+      tasks[i].status = WORKING;//signal to start
+    }
+    
+   done = 0; 
+   while (1) {
+            
+      next = find_next_finished_thread(nofslices);
+      printf("ooooo\n");
+      for (j=0; j<slices[next].imSteps; j++) {
+	for (x=0; x<slices[next].reSteps; x++) {
+          setColor(pickColor(res[y*slices[next].reSteps+x],maxIterations));
           drawPoint(x,y);
         }
         y++;
       }
+      done++;
+      if (done == nofslices)
+        break;
+    }
+    
+    //give signals "NOT_WORKING" status
+    for (i=0; i<nofslices; i++) {
+      tasks[i].status = NOT_WORKING;//signal to start
     } 
 
     /* get next focus/zoom point */

@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include "mandelCore.h"
 #include "mandelThreaded.h"
+#include <sched.h>
 
 #define WORKING 1
 #define NOT_WORKING 2
@@ -8,11 +9,11 @@
 
 taskT tasks[4];
 
-int find_next_available_thread(int numOfThreads)  {
+int find_next_finished_thread(int numOfThreads)  {
   static int i = 0;
   
   while (1)  {
-    if (tasks[i].status == NOT_WORKING || tasks[i].status == DONE)  {
+    if (tasks[i].status == DONE)  {
       return i;
     }
     i = (i+1)%numOfThreads;
@@ -21,20 +22,7 @@ int find_next_available_thread(int numOfThreads)  {
   return 0;
 }
 
-int collectResults(int numOfThreads)  {
-  static int i = 0;
 
-
-  while (1)  {
-    if (tasks[i].status == DONE)
-      return i;
-
-    i = (i+1)%numOfThreads;
-  }
-
-  return 0;
-
-}
  
 int init_threads(int numOfThreads)  {
   int i;
@@ -62,7 +50,11 @@ void *waitUntilGetTask(void *newtask)  {
     if ( slave->status == WORKING)  {
       mandel_Calc( slave->pars, slave->maxIterations, slave->res );
       slave->status = DONE;
-    }  
+    }
+    if (sched_yield() != 0)  {
+      printf("problem at yield, waitUntilGetTask\n");
+      return NULL;
+    }
   }
 
  return NULL; 

@@ -15,6 +15,6 @@ extern int init_threads(int NUM_OF_THREADS) ;
 
 extern void *waitUntilGetTask(void *newtask);
 
-extern int find_next_available_thread(int numOfThreads);
+extern int find_next_finished_thread(int numOfThreads);
 
 extern int collectResults(int numOfThreads); 
