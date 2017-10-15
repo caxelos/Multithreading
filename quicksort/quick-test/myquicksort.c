@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <unistd.h>
 
 #define MAX_SIZE 100
 
@@ -14,6 +13,8 @@ typedef struct quickArgs quickArgsT;
 struct task {
   pthread_t tid;
   quickArgsT *args;
+  int childThreads;
+  struct task *parent;
 };
 typedef struct task taskT;  
 
@@ -22,7 +23,7 @@ taskT *taskHead = NULL;
 
 
 
-taskT *createTask(int left, int right)  {
+taskT *createTask(taskT *parent, int left, int right)  {
   quickArgsT *newArgs = NULL;
   taskT *newtask = NULL;
   
@@ -40,14 +41,15 @@ taskT *createTask(int left, int right)  {
     return NULL;
   }    
   newtask->args = newArgs;
- 
+  newtask->childThreads = 0;
+  newtask->parent = parent;
+
   return newtask;
 }
 
 
 void *myquicksort(void *nextTask) {
-  static int numOfThreads=1;
-
+  
   taskT *mytask = (taskT *)nextTask;
   taskT *rTask = NULL;
   taskT *lTask = NULL;
@@ -79,8 +81,9 @@ void *myquicksort(void *nextTask) {
 
    
   if (mytask->args->left < i-1)  {
-    numOfThreads++;     
-    lTask = createTask(mytask->args->left, i-1);
+   
+    mytask->childThreads++;    
+    lTask = createTask(mytask, mytask->args->left, i-1);
     if (lTask == NULL) {
       return NULL;
     }
@@ -93,8 +96,9 @@ void *myquicksort(void *nextTask) {
   }
       
   if (i+1 < mytask->args->right)  {
-    numOfThreads++;
-    rTask = createTask(i+1, mytask->args->right);
+  
+    mytask->childThreads++;
+    rTask = createTask(mytask, i+1, mytask->args->right);
     if ( rTask == NULL) {
       return NULL;
     }
@@ -109,18 +113,21 @@ void *myquicksort(void *nextTask) {
   }
 
 
-  if (mytask == taskHead) {
-    while ( numOfThreads != 1) {
-      if (sched_yield() != 0) {
-        printf("Error at CPU relinquish. Exiting\n");
-        return NULL;
-      }
+
+  while ( mytask->childThreads != 0) {
+    printf("thread %d waiting\n", (int)mytask->tid);
+    if (sched_yield() != 0) {
+      printf("Error at CPU relinquish. Exiting\n");
+      return NULL;
     }
   }
 
+  if (mytask != taskHead)
+    mytask->parent->childThreads--;
+  
+  
   free( mytask->args );
   free( mytask );
-  numOfThreads--;
 
   return NULL;
 }
@@ -174,9 +181,10 @@ int main(int argc, char *argv[])  {
     return -1;
   }
   args->left = 0;
-  args->right = numOfElements-1;//MAX_SIZE-1;
+  args->right = numOfElements-1;
   taskHead->args = args; 
- 
+  taskHead->childThreads = 0;
+  taskHead->parent = NULL;
   myquicksort(taskHead);
 
 
