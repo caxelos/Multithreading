@@ -22,6 +22,39 @@ int array[MAX_SIZE];
 taskT *taskHead = NULL;
 
 
+void destroy_task(taskT *destroyTask) {
+  static int i=0;
+  i++;
+  printf("%da\n", i);
+  taskT *curr = NULL; 
+  taskT *prev = NULL;
+
+  if (destroyTask == taskHead)  {
+    free( taskHead->args );
+    free( taskHead );
+    return ;
+  }
+     
+  prev = taskHead;
+  curr = taskHead->next;
+  while (1)  {
+    if (curr == destroyTask)  {
+      prev->next = curr->next;
+      free( curr->args );
+      free( curr );
+      curr = NULL;
+      printf("%db\n", i);
+      return ;
+    }
+    prev = curr;
+    curr = curr->next;
+  } 
+
+  return ;
+
+}
+
+//tin xreiazomai gt alliws den mporw na kanw destroy
 void insert_to_task_list(taskT *newtask)  {
   taskT *currtask;
   
@@ -58,7 +91,7 @@ taskT *createTask(int left, int right)  {
 
 
   //arxi krisimou
-  insert_to_task_list(newtask);
+  //insert_to_task_list(newtask);
   //telos krisimou
   
   
@@ -67,6 +100,9 @@ taskT *createTask(int left, int right)  {
 
 //void *myquicksort(int *array, int left, int right )  {
 void *myquicksort(void *nextTask) {
+  static int numOfThreads=1;
+  static int created = 1;
+  static int destroyed = 0;
   //take left or right node
   taskT *mytask = (taskT *)nextTask;
   taskT *rTask = NULL;
@@ -99,11 +135,13 @@ void *myquicksort(void *nextTask) {
 
    
   if (mytask->args->left < i-1)  {
-        
+    numOfThreads++;
+    created++;     
     lTask = createTask(mytask->args->left, i-1);
     if (lTask == NULL) {
       return NULL;
-    } 
+    }
+    
   
     //printf("createdThread:(%d,%d)\n", mytask->lTask->args->left, mytask->lTask->args->right);     
     if (pthread_create( &(lTask->tid), NULL, (void *)myquicksort, (void *)lTask) != 0)  {     
@@ -113,11 +151,13 @@ void *myquicksort(void *nextTask) {
   }
       
   if (i+1 < mytask->args->right)  {
-    
+    numOfThreads++;
     rTask = createTask(i+1, mytask->args->right);
     if ( rTask == NULL) {
       return NULL;
-    }  
+    }
+    created++;
+     
  
     //printf("createdThread:(%d,%d)\n", mytask->rTask->args->left, mytask->rTask->args->right);
     if ( pthread_create( &( rTask->tid), NULL, (void *)myquicksort, (void *) rTask) != 0 ) {
@@ -127,23 +167,21 @@ void *myquicksort(void *nextTask) {
       
   }
 
-
-  //waitChildThreadsToFinish(mytask); 
-
-  //printf("finishedThread:(%d,%d)\n", mytask->args->left, mytask->args->right);
+   //printf("finishedThread:(%d,%d)\n", mytask->args->left, mytask->args->right);
   if (mytask == taskHead) {
-    while ( !( rTask == NULL &&  lTask == NULL) ) {
+    while ( numOfThreads != 1) {
       if (sched_yield() != 0) {
         printf("Error at CPU relinquish. Exiting\n");
         return NULL;
       }
     }
+    printf("created:%d, destroyed:%d\n", created, destroyed);
   }
 
   //printf("FREEThread:(%d,%d)\n", mytask->args->left, mytask->args->right);
-  free(mytask->args);
-  free(mytask);
-  mytask = NULL;
+  free( mytask->args );
+  free( mytask );
+ 
 
   return NULL;
 }
