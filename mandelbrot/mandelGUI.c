@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
@@ -174,7 +172,13 @@ int main(int argc, char *argv[]) {
   level = 1;
   
   
-
+/*************************************************************************************
+ - Our code starts here
+ - allocate numofslices struct tasks in order to save:
+   a) the mandelCalc parameters
+   b) the thread id of its task
+   c) the int status of its slave-task(WORKING, NOT_WORKING, DONE)
+**************************************************************************************/ 
   //allocate and initialize struct fields
   tasks = (taskT *)malloc( nofslices * sizeof(taskT) );
   if (tasks == NULL) {
@@ -182,6 +186,9 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+/* 
+- assign jobs to each task but don't let them start
+*/
   if (init_threads(nofslices) == -1) {
     return -1;
   }
@@ -195,26 +202,43 @@ int main(int argc, char *argv[]) {
     
     //y=0;
     for (i=0; i<nofslices; i++) {
-      printf("starting slice nr. %d\n",i+1);
      
-     // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
+     /*
+     - mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
+     - assign parameters in each thread for the above function  
+     */
      (tasks)[i].pars= &slices[i];//1st
      (tasks)[i].maxIterations = maxIterations;//2nd
      (tasks)[i].res=&res[i*slices[i].imSteps*slices[i].reSteps];//3rd 
     }
 
-    //give signal to start
+    /*
+    - give signal to start
+    */
     for (i=0; i<nofslices; i++) {
       (tasks)[i].status = WORKING;//signal to start
     }
     
+   /*
+   - begin a while(1) until all parts of image are drawed
+   - increment done when a slice has been drawed
+   - break from while(1) when done==nofslices
+   */
    done = 0; 
    while (1) {
             
+      /*
+      - select the first thread that finished working
+      */      
       next = find_next_finished_thread(nofslices);
-      j = next *slices[next].imSteps;	
-      printf("next is %d\n", next);		
+      j = next *slices[next].imSteps;//set j = the next slice begin	
+      
+      /*
+      - when i read the border with the upper slice, exit
+      - (next+1)*slices[next].imSteps is the beggining of the upper slice      
+      */
       for (; j<(next+1)*slices[next].imSteps; j++) {
+        if (next+1 == 5) printf("problemmaaaa\n");
 	for (x=0; x<slices[next].reSteps; x++) {
           setColor(pickColor(res[j*slices[next].reSteps+x],maxIterations));
           drawPoint(x,j);

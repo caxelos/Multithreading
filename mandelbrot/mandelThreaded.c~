@@ -1,65 +1,65 @@
 #include <pthread.h>
+#include <stdio.h>
 #include "mandelCore.h"
 #include "mandelThreaded.h"
+#include <sched.h>
+
 
 #define WORKING 1
 #define NOT_WORKING 2
-#define NUM_OF_THREADS 4
+#define DONE 3
 
-taskT *tasks = NULL;
-int find_next_available_thread(int numOfThreads)  {
-  static int i = 0;
+taskT *tasks;
+
+
+int find_next_finished_thread(int numOfThreads)  {
+  int i = 0;
+
   
   while (1)  {
-    if (tasks[i]->status == NOT_WORKING)  {
-      return i;
+    if (tasks[i].status == DONE)  {
+	tasks[i].status = NOT_WORKING;	
+	
+        return i;
     }
     i = (i+1)%numOfThreads;
+  }
+
+
+  return 0;
+}
+
+
+ 
+int init_threads(int numOfThreads)  {
+  int i;
+
+  for (i = 0; i < numOfThreads; i++)  {
+    tasks[i].status = NOT_WORKING;
+
+    if ( pthread_create( &(tasks[i]).tid, NULL, (void *)waitUntilGetTask, (void *)&tasks[i]) != 0) {//(void *) (intptr_t)i) != 0) {
+      printf("Error creating thread %d. Exiting\n", i);
+      return -1;
+    }
   }
 
   return 0;
 }
 
-taskT *init_threads(int numOfThreads)  {
-  int i;
-  
-  //allocate memory for the N structs taskT
-  tasks = (taskT *)malloc(numOfThreads * sizeof(taskT) );
-  if (tasks == NULL)  {
-    printf("Error creating tasks. Exiting\n");
-    return NULL;
-  }
 
-  //allocate and initialize struct fields
-  for (i = 0; i < numOfThreads; i++)  {
-    tasks[i]->status = NOT_WORKING;
-/*
-    tasks[i]->calc = (calcParamsT *)malloc(sizeof(struct calcParams) );
-    if (tasks[i]->calc == NULL)  {
-      printf("Error creating params %d. Exiting\n", i);
-      return (-1);
-    }*/
-    if ( pthread_create( &tasks[i]->tid, NULL, (void *)waitUntilGetTask, (void *)tasks[i]) != 0) {
-      printf("Error creating thread %d. Exiting\n", i);
+void *waitUntilGetTask(void *newtask)  {    
+
+  taskT *slave = (taskT *)newtask;
+  while (1)  {
+    if ( slave->status == WORKING)  {
+      mandel_Calc( slave->pars, slave->maxIterations, slave->res );
+      slave->status = DONE;
+    }
+    if (sched_yield() != 0)  {
+      printf("problem at yield, waitUntilGetTask\n");
       return NULL;
     }
   }
 
-  return NULL;
-}
-
-
-
-void *waitUntilGetTask(void *newtask)  {
-
-  taskT *task = (taskT *)newtask;
-  while (1)  {
-    if ( (*task)->status == WORKING)  {
-      //mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
-      mandel_Calc( &(*task)->pars, (*task)->maxIterations, (*task)->res );
-      (*task)->status = NOT_WORKING;
-    }  
-  }
-
-
+ return NULL; 
 }

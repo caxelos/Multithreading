@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-
 struct task {
   mandel_Pars *pars;//param
   int *res;//param
@@ -11,10 +7,8 @@ struct task {
 };
 typedef struct task taskT;
 
-extern int init_threads(int NUM_OF_THREADS) ;
+extern int init_threads(int numofslices) ;
 
 extern void *waitUntilGetTask(void *numOfThread);
 
 extern int find_next_finished_thread(int numOfThreads);
-
-extern int collectResults(int numOfThreads); 

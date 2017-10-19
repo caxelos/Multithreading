@@ -1,8 +1,9 @@
 #include <pthread.h>
+#include <stdio.h>
 #include "mandelCore.h"
 #include "mandelThreaded.h"
 #include <sched.h>
-#include <stdint.h>
+
 
 #define WORKING 1
 #define NOT_WORKING 2
@@ -18,10 +19,8 @@ int find_next_finished_thread(int numOfThreads)  {
   while (1)  {
     if (tasks[i].status == DONE)  {
 	tasks[i].status = NOT_WORKING;	
-	printf("finished:%p\n", &(tasks[i]));
-	//i = (i+1)%numOfThreads;
 	
-      return i;
+        return i;
     }
     i = (i+1)%numOfThreads;
   }
@@ -32,6 +31,11 @@ int find_next_finished_thread(int numOfThreads)  {
 
 
  
+/* init_threads()
+- called by the main thread
+- it creates nofslices threads and initializes them as NOT_WORKING
+- its thread runs forever in the waitUntiGetTask function 
+*/
 int init_threads(int numOfThreads)  {
   int i;
 
@@ -48,8 +52,16 @@ int init_threads(int numOfThreads)  {
 }
 
 
+/* waitUntilGetTask()
+- Called by init_threads()
+- Here run all the "slave" threads, those who do the calculations
+- If the main thread marks a thread as WORKING from main function
+the thread calls the mandel_Calc function and then marks itself as
+DONE
+- If a thread is not in WORKING status, it gives the processor to
+the next available thread
+*/
 void *waitUntilGetTask(void *newtask)  {    
- // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]) {
 
   taskT *slave = (taskT *)newtask;
   while (1)  {

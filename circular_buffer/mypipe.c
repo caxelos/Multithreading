@@ -72,8 +72,8 @@ void pipe_init(int size)  {
 
 /* pipe_write()
 
-- Grafei enan xaraktira ston buffer. O sugxrotismos epitigxanetai
-
+- Grafei enan xaraktira ston buffer. Tin kalei i thread_pipereader()
+- To pws petuxainetai o sygxronismos tha to anaferoume ston psevdokwdika
 */
 void pipe_write(char c)  { 
   int nxt_wr_ptr = (buff->wrptr + 1)%buff->size;
@@ -97,7 +97,11 @@ void pipe_write(char c)  {
 
 }
 
-
+/* pipe_read()
+- Diavazei ena xaraktira apto buffer
+- To pws epitigxanetai sigxronismos to anaferoume ston psevdokodika
+- Tin kalei i thread_pipereader
+*/
 int pipe_read(void)  {
   char c;  
   int bytesWrite;
@@ -128,7 +132,9 @@ int pipe_read(void)  {
 
 
 
-
+/*
+kane free ton buffer
+*/
 void pipe_close()  {
  
   free( cyclBuffer );

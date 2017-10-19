@@ -1,5 +1,12 @@
 #include "mypipe.h"
 
+/* struct buffinfo
+ - size: to megethos tou pinaka
+ - rdptr: i thesi anagnwsis ston pinaka
+ - wrptr: i thesi eggrafis ston pinaka
+ - full: energos simatoforos(oxi kanonikos), molis ginei miden mplokarei i write. 
+ - empty: energos simatoforos(oxi kanonikos), molis ginei miden mplokarei i read
+*/
 struct buffinfo {
   int size;
   int rdptr;
@@ -9,7 +16,18 @@ struct buffinfo {
 };
 typedef struct buffinfo *bufferT;
 
+
+/*
+- To parapanw buffer prepei na nai volatile gia na min xrisimopoiountai oi registers
+  otan kaneis anatheseis sta pedia tou struct(den xreiazetai ola ta peidia na nai volatile, 
+  mono to empty kai full xreiazetai na einai)
+*/
 volatile bufferT buff = NULL;
+
+
+/*
+file descriptors twn input.txt kai output.txt
+*/
 int fdin;
 int fdout;
 volatile int endOfFile = 0;
@@ -51,6 +69,12 @@ void pipe_init(int size)  {
 }
 
 
+
+/* pipe_write()
+
+- Grafei enan xaraktira ston buffer. Tin kalei i thread_pipereader()
+- To pws petuxainetai o sygxronismos tha to anaferoume ston psevdokwdika
+*/
 void pipe_write(char c)  { 
   int nxt_wr_ptr = (buff->wrptr + 1)%buff->size;
   
@@ -64,7 +88,6 @@ void pipe_write(char c)  {
   cyclBuffer[buff->wrptr] = c;
   
   //telos krisimou tmimatos-auksise ton write-pointer
-  printf("write: %c, pos: %d\n", c,buff->wrptr);
   buff->wrptr = nxt_wr_ptr;
   
   buff->empty++;
@@ -74,7 +97,11 @@ void pipe_write(char c)  {
 
 }
 
-
+/* pipe_read()
+- Diavazei ena xaraktira apto buffer
+- To pws epitigxanetai sigxronismos to anaferoume ston psevdokodika
+- Tin kalei i thread_pipereader
+*/
 int pipe_read(void)  {
   char c;  
   int bytesWrite;
