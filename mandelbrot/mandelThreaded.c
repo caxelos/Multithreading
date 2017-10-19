@@ -2,22 +2,30 @@
 #include "mandelCore.h"
 #include "mandelThreaded.h"
 #include <sched.h>
+#include <stdint.h>
 
 #define WORKING 1
 #define NOT_WORKING 2
 #define DONE 3
 
-taskT tasks[4];
+taskT *tasks;
+
 
 int find_next_finished_thread(int numOfThreads)  {
-  static int i = 0;
+  int i = 0;
+
   
   while (1)  {
     if (tasks[i].status == DONE)  {
+	tasks[i].status = NOT_WORKING;	
+	printf("finished:%p\n", &(tasks[i]));
+	//i = (i+1)%numOfThreads;
+	
       return i;
     }
     i = (i+1)%numOfThreads;
   }
+
 
   return 0;
 }
@@ -26,12 +34,11 @@ int find_next_finished_thread(int numOfThreads)  {
  
 int init_threads(int numOfThreads)  {
   int i;
-  
-  //allocate and initialize struct fields
+
   for (i = 0; i < numOfThreads; i++)  {
     tasks[i].status = NOT_WORKING;
 
-    if ( pthread_create( &tasks[i].tid, NULL, (void *)waitUntilGetTask, (void *)&tasks[i]) != 0) {
+    if ( pthread_create( &(tasks[i]).tid, NULL, (void *)waitUntilGetTask, (void *)&tasks[i]) != 0) {//(void *) (intptr_t)i) != 0) {
       printf("Error creating thread %d. Exiting\n", i);
       return -1;
     }
@@ -39,7 +46,6 @@ int init_threads(int numOfThreads)  {
 
   return 0;
 }
-
 
 
 void *waitUntilGetTask(void *newtask)  {    

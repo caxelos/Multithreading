@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
@@ -22,7 +23,7 @@ static unsigned long curC;
 static Window win;
 static GC gc;
 
-extern taskT tasks[4];
+extern taskT *tasks;
 
 /* basic win management rountines */
 
@@ -43,7 +44,7 @@ void openWin(const char *title, int width, int height) {
   unsigned long blackC,whiteC;
   XSizeHints sh;
   XEvent evt;
-  long evtmsk;
+  //long evtmsk;
 
   whiteC = WhitePixel(dsp, DefaultScreen(dsp));
   blackC = BlackPixel(dsp, DefaultScreen(dsp));
@@ -172,52 +173,65 @@ int main(int argc, char *argv[]) {
 
   level = 1;
   
+  
+
+  //allocate and initialize struct fields
+  tasks = (taskT *)malloc( nofslices * sizeof(taskT) );
+  if (tasks == NULL) {
+    printf("Error allocating memory for tasks. Exiting\n");
+    return -1;
+  }
+
   if (init_threads(nofslices) == -1) {
     return -1;
   }
 
+ 
   while (1) {
     
     clearWin();
 
     mandel_Slice(&pars,nofslices,slices);
     
-    y=0;
+    //y=0;
     for (i=0; i<nofslices; i++) {
       printf("starting slice nr. %d\n",i+1);
      
      // mandel_Calc(&slices[i],maxIterations,&res[i*slices[i].imSteps*slices[i].reSteps]);
-     tasks[i].pars= &slices[i];//1st
-     tasks[i].maxIterations = maxIterations;//2nd
-     tasks[i].res=&res[i*slices[i].imSteps*slices[i].reSteps];//3rd 
+     (tasks)[i].pars= &slices[i];//1st
+     (tasks)[i].maxIterations = maxIterations;//2nd
+     (tasks)[i].res=&res[i*slices[i].imSteps*slices[i].reSteps];//3rd 
     }
 
     //give signal to start
     for (i=0; i<nofslices; i++) {
-      tasks[i].status = WORKING;//signal to start
+      (tasks)[i].status = WORKING;//signal to start
     }
     
    done = 0; 
    while (1) {
             
       next = find_next_finished_thread(nofslices);
-      printf("ooooo\n");
-      for (j=0; j<slices[next].imSteps; j++) {
+      j = next *slices[next].imSteps;	
+      printf("next is %d\n", next);		
+      for (; j<(next+1)*slices[next].imSteps; j++) {
 	for (x=0; x<slices[next].reSteps; x++) {
-          setColor(pickColor(res[y*slices[next].reSteps+x],maxIterations));
-          drawPoint(x,y);
+          setColor(pickColor(res[j*slices[next].reSteps+x],maxIterations));
+          drawPoint(x,j);
         }
-        y++;
+
       }
       done++;
       if (done == nofslices)
         break;
+
     }
-    
+
+  
     //give signals "NOT_WORKING" status
-    for (i=0; i<nofslices; i++) {
-      tasks[i].status = NOT_WORKING;//signal to start
-    } 
+    //for (i=0; i<nofslices; i++) {
+    //  tasks[i].status = NOT_WORKING;//signal to start
+    //} 
 
     /* get next focus/zoom point */
     

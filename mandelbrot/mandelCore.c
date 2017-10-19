@@ -41,10 +41,11 @@ void mandel_Calc(mandel_Pars *pars, int maxIterations, int res[]) {
   int x,y;
   long double re,im; 
 
+
   im = pars->imBeg;
-  for (y=0; y<pars->imSteps; y++) {
+  for (y=0; y< pars->imSteps; y++) {
     re = pars->reBeg;
-    for (x=0; x<pars->reSteps; x++) {
+    for (x=0; x< pars->reSteps; x++) {
       res[y*pars->reSteps+x] = isMandelbrot (re,im,maxIterations);
       re = re + pars->reInc;
     }
