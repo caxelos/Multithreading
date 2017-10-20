@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define MAX_SIZE 100
+#define MAX_SIZE 10000
 
 
 /* struct quickArgsT
@@ -182,7 +182,7 @@ void *myquicksort(void *nextTask) {
 */
 int read_number()  {
   int i = 0;
-  char number_str[7];
+  char number_str[20];
 
   while (1) {  
     number_str[i] = getchar();

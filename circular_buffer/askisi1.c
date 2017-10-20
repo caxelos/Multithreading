@@ -5,20 +5,17 @@ extern int fdin;
 extern int fdout;
 extern volatile int endOfFile;
 
-char *cyclBuffer=NULL;
-
-
+//char *cyclBuffer=NULL;
 /* thread_pipereader()
 - Kaleitai mesw tis pthread_create
 - Diavaze apto kukliko buffer kai grapse se ena arxeio
 - Molis diavasei apto buffer miden xaraktires, kane deallocate
 to buffer kai dwse sima na enwthei to thread me to kurio thread
-
 */
 void *thread_pipereader(void *filename)  {
    int readval;
    
-   fdout = open( (char *)filename , O_RDWR | O_CREAT, S_IRUSR ); 
+   fdout = open( (char *)filename , O_RDWR | O_CREAT, S_IRWXU ); 
    if (fdout == -1 )  {
      printf("Error opening output file. Please use command \"rm output.txt\" before running again\n");
      return NULL;
@@ -27,7 +24,6 @@ void *thread_pipereader(void *filename)  {
    while(1){
       readval = pipe_read();
       if (readval == 0)  {
-        pipe_close();
         join_threads = 1;
         return NULL;
       }
@@ -42,7 +38,6 @@ gia na grapsei ston agwgo, xrisimopoiwntas tin read
 - Molis diavasei miden bytes apto input.txt, simainei oti ftasame sto EOF
 - Tote termatise kai  gyrna stin main, opou meta perimenei na 
 termatistei kai to allo thread
-
 */
 void pipewriter(char *filename) { 
    int bytesRead;
@@ -68,7 +63,12 @@ void pipewriter(char *filename) {
    }
 }
 
+/*
+Nikitakis Panagiotis, aem 1717
+Axelos Christos, aem 1814
 
+Algorithmos Peterson ws algorithmos sugxronismou
+*/
 int main(int argc, char **argv)  {
   pthread_t tid1;
   
@@ -102,6 +102,7 @@ int main(int argc, char **argv)  {
    
   }
   
-  
+  pipe_close();
+ 
   return 0;
 }

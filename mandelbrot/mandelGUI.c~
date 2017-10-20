@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
       
       /*
       - when i read the border with the upper slice, exit
-      
+      - (next+1)*slices[next].imSteps is the beggining of the upper slice      
       */
       for (; j<(next+1)*slices[next].imSteps; j++) {
         if (next+1 == 5) printf("problemmaaaa\n");

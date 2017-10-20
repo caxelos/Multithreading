@@ -2,13 +2,26 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define MAX_SIZE 100
+#define MAX_SIZE 10000
 
+
+/* struct quickArgsT
+- it contains the arguments passed to the next recursive quicksort 
+
+-  left and right are the new array limits
+*/
 struct quickArgs {
   int left;
   int right; 
 };
 typedef struct quickArgs quickArgsT;
+
+/* struct taskT
+- each task has its threadID, the number of childs it has, a pointer
+to its parent task and a void pointer that passes argument to new quicksort
+- a parent can have <= 2 childs(each child is a recursive call to quicksort,
+think it as an unbalanced binary tree)
+*/
 
 struct task {
   pthread_t tid;
@@ -19,10 +32,23 @@ struct task {
 typedef struct task taskT;  
 
 int array[MAX_SIZE];
+
+
+/*
+- the initial task struct
+- there is no linked list, each node is only connected to
+its father and is freed recursively at main
+*/
 taskT *taskHead = NULL;
 
 
-
+/* createTask()
+- called by myquicksort
+- create a node and assign him the left or right recursive 
+step of quicksort.
+- connect the node to its father, initialize its childs to 
+zero and get the new array limits
+*/
 taskT *createTask(taskT *parent, int left, int right)  {
   quickArgsT *newArgs = NULL;
   taskT *newtask = NULL;
@@ -80,6 +106,11 @@ void *myquicksort(void *nextTask) {
   array[mytask->args->right] = temp;
 
    
+  /*
+  - if i must do left-recursive quicksort, create a new thread
+  , assign the arguments and increment the current task's childs
+  once
+  */
   if (mytask->args->left < i-1)  {
    
     mytask->childThreads++;    
@@ -94,7 +125,10 @@ void *myquicksort(void *nextTask) {
       return NULL;
     }
   }
-      
+  
+  /*
+  - the same process repeated for the right part of the array
+  */    
   if (i+1 < mytask->args->right)  {
   
     mytask->childThreads++;
@@ -113,19 +147,29 @@ void *myquicksort(void *nextTask) {
   }
 
 
-
+  /*
+  - Wait until all of the childs have stopped working
+  */
   while ( mytask->childThreads != 0) {
-    printf("thread %d waiting\n", (int)mytask->tid);
+    
     if (sched_yield() != 0) {
       printf("Error at CPU relinquish. Exiting\n");
       return NULL;
     }
   }
 
+  
+  /*
+  - extra code in case of the 1st task, because it
+  doesnt have a parent
+  */
   if (mytask != taskHead)
     mytask->parent->childThreads--;
   
   
+  /*
+  - free all dynamicaly allocated memory
+  */
   free( mytask->args );
   free( mytask );
 
@@ -133,6 +177,9 @@ void *myquicksort(void *nextTask) {
 }
 
 
+/* read_number()
+- read chars, eliminate ' ' characters and return as an integer 
+*/
 int read_number()  {
   int i = 0;
   char number_str[7];

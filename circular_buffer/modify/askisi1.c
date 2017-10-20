@@ -6,6 +6,8 @@ extern int fdout;
 extern volatile int endOfFile;
 
 char *cyclBuffer=NULL;
+
+
 /* thread_pipereader()
 - Kaleitai mesw tis pthread_create
 - Diavaze apto kukliko buffer kai grapse se ena arxeio
@@ -24,6 +26,7 @@ void *thread_pipereader(void *filename)  {
    while(1){
       readval = pipe_read();
       if (readval == 0)  {
+        pipe_close();
         join_threads = 1;
         return NULL;
       }
@@ -63,12 +66,7 @@ void pipewriter(char *filename) {
    }
 }
 
-/*
-Nikitakis Panagiotis, aem 1717
-Axelos Christos, aem 1814
 
-Algorithmos Peterson ws algorithmos sugxronismou
-*/
 int main(int argc, char **argv)  {
   pthread_t tid1;
   
@@ -102,7 +100,6 @@ int main(int argc, char **argv)  {
    
   }
   
-  pipe_close();
- 
+  
   return 0;
 }

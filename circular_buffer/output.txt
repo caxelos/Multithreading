@@ -1,1 +1,0 @@
-I must send this text correctly. If it hasn't been sent in order there are problems in sychronization

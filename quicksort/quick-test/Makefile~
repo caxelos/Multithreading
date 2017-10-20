@@ -1,0 +1,6 @@
+myquicksort: myquicksort.o
+	gcc -Wall -o myquicksort.o -o myquicksort -lpthread
+
+myquicksort.o: myquicksort.c
+	gcc -Wall -c myquicksort.c -o myquicksort -lpthread
+	

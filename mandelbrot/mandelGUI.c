@@ -238,7 +238,6 @@ int main(int argc, char *argv[]) {
       - (next+1)*slices[next].imSteps is the beggining of the upper slice      
       */
       for (; j<(next+1)*slices[next].imSteps; j++) {
-        if (next+1 == 5) printf("problemmaaaa\n");
 	for (x=0; x<slices[next].reSteps; x++) {
           setColor(pickColor(res[j*slices[next].reSteps+x],maxIterations));
           drawPoint(x,j);
