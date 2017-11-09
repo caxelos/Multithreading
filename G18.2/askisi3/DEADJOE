@@ -1,0 +1,71 @@
+
+*** These modified files were found in JOE when it aborted on Thu Nov  9 15:35:43 2017
+*** JOE was aborted by UNIX signal 1
+
+*** File 'control_file.txt'
+40
+2
+2
+2
+4
+5
+5
+6
+6
+6
+6
+7
+9
+10
+10
+10
+13
+14
+14
+14
+14
+14
+15
+15
+16
+16
+22
+22
+22
+23
+23
+24
+24
+24
+24
+24
+24
+24
+24
+24
+24
+24
+
+
+*** File '(Unnamed)'
+golden
+f_in
+
+*** File '(Unnamed)'
+temp.c
+temp.c
+temp.c
+temp.c
+temp.c
+temp.c
+temp.c
+temp.c
+temp.c
+control_file.txt
+control_file.txt
+
+*** File '* Startup Log *'
+Processing '/etc/joe/joerc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/joerc
