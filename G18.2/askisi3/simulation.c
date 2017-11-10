@@ -7,6 +7,7 @@
 
 #include "myBinSema.h"
 
+#define MAX_TRAIN_SEATS 5
 
 struct passenger {
   pthread_t tid;
@@ -16,8 +17,9 @@ struct passenger {
 typedef struct passenger passengerT;
 
 
-volatile int curr_time=500;
+volatile int curr_time=0;
 volatile int passInsideTrain = 0;
+volatile int trainSize;
 
 bsem allowEntrance, waitForEntrance;
 bsem allowExit, waitForExit;
@@ -28,46 +30,47 @@ void *thread_passCode(void *passArgs)  {
 
   passengerT *args = (passengerT *)passArgs;
   
-  printf("Passenger: passenge1r %d waiting for entrance...\n", args->passId);// , args->arrivalTime, curr_time);
+  //printf("Passenger: passenger %d waiting for entrance...\n", args->passId);// , args->arrivalTime, curr_time);
   my_down( &allowEntrance );
   passInsideTrain++;
-  printf("Passenger: passenger %d got inside the train...\n", args->passId );
+  printf("Passenger: passenger %d got inside the train. Total passengers: %d. Arrival time: %d secs, Exit time: %d secs\n",args->passId, passInsideTrain, args->arrivalTime, curr_time);
   my_up( &waitForEntrance );
   
-  if (passInsideTrain == 5)  {
-    printf("Passenger: I am number %d, in one minite begin the train...\n", args->passId);
+  if (passInsideTrain == trainSize)  {
+    //printf("Passenger: I am number %d, in one minite begin the train...\n", args->passId);
+    
     my_up( &beginTrain );
-    printf("Passenger: I am number %d, please begin the train...\n", args->passId); 
+    //printf("Passenger: I am number %d, please begin the train...\n", args->passId); 
   }  
     
  /*
   * Now the train is traveling...
   */ 
    
-  printf("Passenger: passenger %d waiting for exit...\n", args->passId );
+  //printf("Passenger: passenger %d waiting for exit...\n", args->passId );
   my_down( &allowExit );
-  printf("Passenger: passenger %d exited the train...\n", args->passId);
   passInsideTrain--;
+  printf("Passenger: passenger %d exited the train. Total passengers: %d. Arrival time: %d secs, Exit time: %d secs\n", args->passId, passInsideTrain, args->arrivalTime, curr_time);
+  
   my_up( &waitForExit);    
 
-  /* - Ma den exoume pei oti oi passengers katastrefontai molis ftasoume??!
-   * 
-   */
-  
+    
   return NULL;
 }
 
 int main( int argc, char *argv[] )  {
   passengerT *passArgs;
-  int dailyPassengers = 0;
+  int dailyPassengers = 0, waitingPassengers = 0;
+  
   int fd;//control file descriptor
   int i;
   char buffer[3];
   int numOfRoutes = 0;
+  
   /*
    *open file including the arrival times
    */  
-  fd = open("control_file.txt", O_RDONLY, S_IRWXU);
+  fd = open(argv[1], O_RDONLY, S_IRWXU);
   if (fd < 0) {
     printf("Error opening control file. Exiting\n");
     return -1;
@@ -98,10 +101,11 @@ int main( int argc, char *argv[] )  {
     return -1;
   }
 
-
+  printf("Give the size of the train: ");
+  scanf("%d", &trainSize);
   
   
-  printf("**************** Start the Process ******************************\n\n");
+  printf("\n**************** Start the Process ******************************\n\n");
   
   
  /*
@@ -109,10 +113,12 @@ int main( int argc, char *argv[] )  {
   */
   
   while (1) {
+   printf("\n**************** Next route: %d ************************\n", numOfRoutes); 
    /*
     * begin the next route
-    */ 
-    while (passInsideTrain < 5)  {
+    */
+     while( waitingPassengers < trainSize || curr_time < atoi(buffer) )  {//twra 3s...irthe sta 4
+
       i = -1;
       do {
         i++;
@@ -124,10 +130,10 @@ int main( int argc, char *argv[] )  {
       
       } while (buffer[i] != '\n');
   
-      if ( atoi(buffer) > curr_time ) { // if time arrival is bigger than the current time
+      if ( atoi(buffer) > curr_time ) { // havent arived yet
         buffer[i] = '\0';
-        printf("curr_time: %d seconds\n", curr_time);
-        printf("next passenger: %d seconds\n", atoi(buffer) );
+  //      printf("curr_time: %d seconds\n", curr_time);
+  //      printf("next passenger: %d seconds\n", atoi(buffer) );
         lseek(fd, -( strlen(buffer)+1 ), SEEK_CUR );
       
         curr_time++;
@@ -135,27 +141,36 @@ int main( int argc, char *argv[] )  {
       else { // a new passenger now can go to the entrance, create a thread for him
         buffer[i] = '\0';
         dailyPassengers++;
-  
+        waitingPassengers++;
+
         passArgs = (passengerT *)malloc( sizeof(passengerT) );
         passArgs->passId=dailyPassengers;
         passArgs->arrivalTime = atoi(buffer);
           
         pthread_create( &(passArgs)->tid, NULL, (void *)thread_passCode, (void *)passArgs );
       
-      
-       /*
-        * Now train code to insert him into the trai
-        */
-        my_up( &allowEntrance );
-        printf("Train: Train allowed entrance to passenger %d\n", passArgs->passId);
-      
-        my_down( &waitForEntrance );         
-        printf("Train: Train received the signal from passenger %d got in...\n", passArgs->passId);
       }
+   }      
+   waitingPassengers = waitingPassengers - trainSize;
+   printf("**** Number of passengers waiting: %d. Number of passengers on board: %d\n", waitingPassengers, passInsideTrain);
+       /*
+        * Now train code to insert the next passenger into the train
+        */
+    while (1)  {
+        
+	if (passInsideTrain == trainSize)
+          break;
+        else {
+	  my_up( &allowEntrance );
+	  //printf("Train: Train allowed entrance to passenger\n");
+          my_down( &waitForEntrance );        
+	}
+        //printf("Train: Train received the signal from passenger to get in...\n");
+      
     }
   
     printf("\nTrain: waiting for train to begin\n");
-    //my_down( &beginTrain );
+    my_down( &beginTrain );
     printf("Train: received the signal from the last passenger to start\n");
  
   
@@ -176,11 +191,10 @@ int main( int argc, char *argv[] )  {
     * Now put these passengers out of the train
     */
     while (passInsideTrain != 0)  {
-    
       my_up( &allowExit );
-      printf("Train: Train allowed exit\n");
+      //printf("Train: Train allowed exit\n");
       my_down( &waitForExit );
-      printf("Train: received the signal from passenger that exited...\n");
+      //printf("Train: received the signal from passenger that exited...\n");
     }
   
  
