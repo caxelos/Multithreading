@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
+
 //you can represent a semaphore by an INT that is synchronized by a mutex. 
 
 //pthread_mutex_init
