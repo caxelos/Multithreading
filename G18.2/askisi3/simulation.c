@@ -7,7 +7,7 @@
 
 #include "myBinSema.h"
 
-#define MAX_TRAIN_SEATS 5
+
 
 struct passenger {
   pthread_t tid;
@@ -65,7 +65,8 @@ int main( int argc, char *argv[] )  {
   int fd;//control file descriptor
   int i;
   char buffer[3];
-  int numOfRoutes = 0;
+  int numOfRoutes = 1;
+  int eof = 0;
   
   /*
    *open file including the arrival times
@@ -117,40 +118,44 @@ int main( int argc, char *argv[] )  {
    /*
     * begin the next route
     */
-     while( waitingPassengers < trainSize || curr_time < atoi(buffer) )  {//twra 3s...irthe sta 4
-
+     while( (waitingPassengers < trainSize || curr_time <= atoi(buffer)) &&  eof == 0 )  {//twra 3s...irthe sta 4
+     
       i = -1;
       do {
         i++;
         if (0 == read(fd, buffer+i, sizeof(char) ) ) { //EOF reached
-          printf("************** End Of Process ******************************\n\n");
-          printf("*** NumOfRoutes: %d\n", numOfRoutes);
-          return 0;  
+	  eof = 1;	      
         }  
       
-      } while (buffer[i] != '\n');
-  
+      } while (buffer[i] != '\n' && eof != 1);
+     
+
+      buffer[i] = '\0';	
       if ( atoi(buffer) > curr_time ) { // havent arived yet
-        buffer[i] = '\0';
   //      printf("curr_time: %d seconds\n", curr_time);
   //      printf("next passenger: %d seconds\n", atoi(buffer) );
         lseek(fd, -( strlen(buffer)+1 ), SEEK_CUR );
       
         curr_time++;
       }
-      else { // a new passenger now can go to the entrance, create a thread for him
-        buffer[i] = '\0';
+      else { 
         dailyPassengers++;
         waitingPassengers++;
-
+ 
         passArgs = (passengerT *)malloc( sizeof(passengerT) );
         passArgs->passId=dailyPassengers;
         passArgs->arrivalTime = atoi(buffer);
-          
+        
+  
         pthread_create( &(passArgs)->tid, NULL, (void *)thread_passCode, (void *)passArgs );
-      
+        printf("Waiting: %d, curr_time: %d, atoi(buffer): %d\n", waitingPassengers, curr_time, atoi(buffer) );
       }
-   }      
+      if (eof == 1)
+        break;     
+	
+
+   } 
+     
    waitingPassengers = waitingPassengers - trainSize;
    printf("**** Number of passengers waiting: %d. Number of passengers on board: %d\n", waitingPassengers, passInsideTrain);
        /*
@@ -197,9 +202,14 @@ int main( int argc, char *argv[] )  {
       //printf("Train: received the signal from passenger that exited...\n");
     }
   
+   if (waitingPassengers == 0 && eof == 1)
+     break;
  
    numOfRoutes++;
+
  } 
   
+  printf("************** End Of Process ******************************\n\n");
+
   return 0;
 }
