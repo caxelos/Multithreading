@@ -1,0 +1,2 @@
+simulation: simulation.c myBinSema.c myBinSema.h
+	gcc -Wall simulation.c myBinSema.c myBinSema.h -o simulation -lpthread
