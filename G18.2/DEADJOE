@@ -1,15 +1,26 @@
+
+*** These modified files were found in JOE when it aborted on Mon Oct 30 20:27:55 2017
+*** JOE was aborted by UNIX signal 1
+
+*** File 'testbench.c'
 #include <stdio.h>
 #include <pthread.h>
 #include "myBinSema.h"
 
 pthread_mutex_t  mutex;
+pthread_mutex_t priority;
+
 volatile int i = 0;
 
 void *thread_A(void *argms)  {
   
-  while (i < 20)  {   
+  while (i < 20)  {
+  
+    if (my_down(priority) == -1)
+      return NULL;
+         
     printf("A waits the mutex\n");    
-    if (my_down() == -1)
+    if (my_down(mutex) == -1)
       return NULL;
     
     printf("A took the mutex\n");
@@ -17,8 +28,11 @@ void *thread_A(void *argms)  {
     
     
     printf("A leaving the mutex\n");
-    if (my_up() == -1)
+    if (my_up(mutex) == -1)
       return NULL;
+      
+    if (my_up(priority) == -1)
+      return NULL;  
   
     
     
@@ -49,10 +63,14 @@ int main(int argc, char *argv[])  {
     
     printf("B took the mutex\n");
     i++;
-    printf("B leaving the muter\n");
+    printf("B leaving the mutex\n");
     
-    if (my_up() == -1)
+    if (my_up(mutex) == -1)
       return -1;
+      
+    if (my_up(priority) == -1)
+      return -1;
+  
   
   
     
@@ -64,3 +82,25 @@ int main(int argc, char *argv[])  {
 
   return 0;
 }
+*** File '(Unnamed)'
+golden
+f_in
+
+*** File '(Unnamed)'
+testbench.c
+testbench.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+testbench.c
+testbench.c
+testbench.c
+myBinSema.c
+testbench.c
+
+*** File '* Startup Log *'
+Processing '/etc/joe/joerc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/joerc

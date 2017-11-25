@@ -8,15 +8,15 @@
 //pthread_mutex_unlock
 extern pthread_mutex_t mutex;
 
+/*
+  int state:
+   a) = 0, oloi
+*/
+
 
 int my_init(void)  {
-  
-  pthread_mutexattr_t Attr;
-
-  pthread_mutexattr_init(&Attr);
-  pthread_mutexattr_settype(&Attr, NULL);
-  
-  if (pthread_mutex_init(&mutex, &Attr) != 0)  {
+    
+  if (pthread_mutex_init(&mutex, NULL) != 0) {
     printf("Error at creating mutex. Exiting\n");  
     return -1;
   }
@@ -35,6 +35,7 @@ int my_up(void)  {
 
 
 int my_down(void) {
+    
   if ( pthread_mutex_lock(&mutex) == -1)  {
     printf("Error locking the mutex. Exiting\n");
     return -1;
@@ -47,3 +48,4 @@ int my_destroy(void) {
 
   return 0;
 }
+

@@ -1,0 +1,26 @@
+
+*** These modified files were found in JOE when it aborted on Thu Nov 23 12:57:28 2017
+*** JOE was aborted by UNIX signal 1
+
+*** File '(Unnamed)'
+golden
+f_in
+
+*** File '(Unnamed)'
+testbench
+myBinSema.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+myBinSema.c
+testbench.c
+testbench.c
+
+*** File '* Startup Log *'
+Processing '/etc/joe/joerc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/joerc

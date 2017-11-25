@@ -8,7 +8,7 @@ volatile int i = 0;
 void *thread_A(void *argms)  {
   
   while (i < 20)  {   
-    printf("A waits the mutex\n");
+    printf("A waits the mutex\n");    
     if (my_down() == -1)
       return NULL;
     printf("A took the mutex\n");
@@ -40,11 +40,11 @@ int main(int argc, char *argv[])  {
     }
  
     
-  while (i < 20)  {
+   while (i < 20)  {
 
-    printf("B waits the mutex\n");  
-    //if (my_down() == -1)
-    //  return -1;
+    printf("B waits the mutex\n");     
+    if (my_down() == -1)
+      return -1;
   
     
     printf("B took the mutex\n");

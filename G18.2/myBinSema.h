@@ -4,4 +4,6 @@ int my_up(void);
 
 int my_down(void);
 
-int y_destroy(void);
+int my_destroy(void);
+
+int priority_wait(void);
