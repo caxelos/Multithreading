@@ -1,0 +1,25 @@
+**************** Next route: 1 ************************
+Passenger: passenger 1 waiting for entrance...
+Passenger: passenger 1 got inside the train. Total passengers: 1. Arrival time: 2 secs, Exit time: 4 secs
+Passenger: passenger 2 waiting for entrance...
+Passenger: passenger 2 got inside the train. Total passengers: 2. Arrival time: 2 secs, Exit time: 5 secs
+Passenger: passenger 4 waiting for entrance...
+Passenger: passenger 4 got inside the train. Total passengers: 3. Arrival time: 4 secs, Exit time: 5 secs
+Passenger: passenger 3 waiting for entrance...
+Passenger: passenger 3 got inside the train. Total passengers: 4. Arrival time: 2 secs, Exit time: 6 secs
+before_1st_up
+after_1st_up
+before_down
+after_down
+before_0th_up
+after_0th_down
+before_down
+Passenger: passenger 5 waiting for entrance...
+Passenger: passenger 6 waiting for entrance...
+
+
+
+
+
+
+

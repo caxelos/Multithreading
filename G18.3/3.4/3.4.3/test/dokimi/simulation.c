@@ -8,53 +8,28 @@
 #include "myBinSema.h"
 #include "semlib.h"
 
-#define TRUE 0
-#define FALSE 1
+#define TRUE 1
+#define FALSE 0
 
 
 #define CCR_DECLARE(label) \
-          pthread_cond_t cond_mtx,cond_q1,cond_q2;bsem R_mtx, R_q1, R_q2; \
-          volatile int R_n1=0, R_n2=0;
-          
+          volatile int label_mode = 0,label_train_var=FALSE;pthread_mutex_t label_mtx,label_train_mtx; \
+          pthread_cond_t label_condvar,label_train_cond;             
           
 #define CCR_INIT(label) \
-          mybsem_init(&R_mtx,1); mybsem_init(&R_q1,0);mybsem_init(&R_q2,0);
+          pthread_mutex_init( &label_mtx, NULL ); \
+          pthread_mutex_init( &label_train_mtx, NULL );
+          //var = FALSE;
+          
 
-#define CCR_EXEC(label, cond, body) \
-          printf("before_1st_mtx_down, numOfPass: %d, cond: %d, 1stWaiting: %d, 2ndWaiting: %d\n",passInsideTrain, cond, R_n1,R_n2);down(&R_mtx);printf("after_mtx_down\n"); \
-          while (!cond)  { \
-            R_n1++; \
-            if (R_n2 > 0) { \
-              R_n2--; \
-              /*printf("before_0th_up\n");*/up(&R_q2);/*printf("after_0th_down\n");*/ \
-            } \
-            else { \
-              /*printf("before_1stmtx_up\n");*/up(&R_mtx);/*printf("after_mtx_up\n");*/ \
-            } \
-            /*printf("before_down\n");*/down(&R_q1);/*printf("after_down\n");*/ \
-            R_n2++; \
-            if (R_n1 > 0) { \
-              R_n1--; \
-              up(&R_q1); \
-            } \
-            else { \
-              R_n2--; \
-              up(&R_q2); \
-            } \
-            down(&R_q2); \
+#define CCR_EXEC(label,cond,body) \
+          pthread_mutex_lock( &label_mtx );\
+          while (cond == FALSE)  { \
+            pthread_cond_wait( &label_condvar, &label_mtx); \
           } \
           body \
-          if (R_n1 > 0) { \
-            R_n1--; \
-            /*printf("before_1st_up\n");*/up(&R_q1);/*printf("after_1st_up\n");*/ \
-          } \
-          else if (R_n2 > 0) { \
-            R_n2--; \
-            /*printf("before_2nd_up\n");*/up(&R_q2);/*printf("after_2nd_up\n");*/ \
-          } \
-          else { \
-            printf("before_2ndmtx_up\n");up(&R_mtx);printf("after_mtx_up\n"); \
-          }
+          pthread_mutex_unlock( &label_mtx ); \
+            
 
 
 struct passenger {
@@ -68,7 +43,6 @@ typedef struct passenger passengerT;
 volatile int curr_time=0;
 volatile int passInsideTrain = 0;
 volatile int trainSize;
-volatile int mode = 0;
 
 pthread_cond_t cond_allowEntrance, cond_waitForEntrance, cond_waitForExit, cond_allowExit, cond_beginTrain;
 
@@ -78,7 +52,7 @@ volatile int var_allowEntrance = FALSE, var_waitForEntrance = FALSE, var_waitFor
 
 //bsem /*allowEntrance,*/ waitForEntrance;
 bsem beginTrain;
-CCR_DECLARE(label);
+CCR_DECLARE(ENTRANCE);
 
 void *thread_passCode(void *passArgs)  {
 
@@ -87,18 +61,21 @@ void *thread_passCode(void *passArgs)  {
   printf("Passenger: passenger %d waiting for entrance...\n", args->passId);// , args->arrivalTime, curr_time);
 
   
-  CCR_EXEC(label, (passInsideTrain < 5 ), passInsideTrain++;  printf("Passenger: passenger %d got inside the train. Total passengers: %d. Arrival time: %d secs, Exit time: %d secs\n",args->passId, passInsideTrain, args->arrivalTime, curr_time);); /*sleep(1)*/
+  CCR_EXEC(ENTRANCE, (passInsideTrain < trainSize && ENTRANCE_mode == 1), 
+  passInsideTrain++;   
+  printf("Passenger: passenger %d got inside the train. Total passengers: %d. Arrival time: %d secs, Exit time: %d secs\n",args->passId, passInsideTrain, args->arrivalTime, curr_time);
+     
+  ); /*sleep(1)*/
+
     
   if (passInsideTrain == trainSize)  {
     printf("Passenger: I am number %d, the last passenger. Start the train\n", args->passId);
     
-    /*
     //my_up( &beginTrain );
     pthread_mutex_lock( &mutex_beginTrain );
     var_beginTrain = TRUE;
     pthread_cond_signal( &cond_beginTrain );
     pthread_mutex_unlock( &mutex_beginTrain );
-    */
   }
    
  /*
@@ -155,7 +132,7 @@ int main( int argc, char *argv[] )  {
   /*
    * Init the region 
    */
-  CCR_INIT(label);
+  CCR_INIT(ENTRANCE);
   
  /*
   * Initialize the semaphores
@@ -217,6 +194,7 @@ int main( int argc, char *argv[] )  {
  /*
   * find the nexts(passengers) from the input file, according to their arrival time and put the to the train
   */
+
   
   while (1) {
    printf("\n**************** Next route: %d ************************\n", numOfRoutes); 
@@ -260,10 +238,17 @@ int main( int argc, char *argv[] )  {
 
     } 
  
-   mode = 1;
-   //CCR_EXEC(label, (passInsideTrain == 5), );
-   while (passInsideTrain != 5) { printf("passInsideTrain: %d\n", passInsideTrain);}
-   mode = 0;
+   ENTRANCE_mode = 1;
+   //pthread_mutex_lock(&mtx);pthread_cond_broadcast(&condvar);pthread_mutex_unlock(&mtx); 
+   while (passInsideTrain < trainSize) {      
+    pthread_mutex_lock(&ENTRANCE_mtx);
+    pthread_cond_broadcast(&ENTRANCE_condvar);
+    pthread_mutex_unlock(&ENTRANCE_mtx);   
+    /*
+    * edw i anamoni
+    */
+   }
+   ENTRANCE_mode = 0;
    
    printf("\nTrain Officer: Number of passengers waiting: %d. Number of passengers on board: %d\n\n", waitingPassengers, passInsideTrain);
    waitingPassengers = waitingPassengers - trainSize;
@@ -276,7 +261,6 @@ int main( int argc, char *argv[] )  {
     
   
     printf("\n**************************************\nTrain: waiting for train to begin\n");
-    /*
     //my_down( &beginTrain );
     pthread_mutex_lock( &mutex_beginTrain);
     while ( var_beginTrain == FALSE ) {
@@ -284,7 +268,7 @@ int main( int argc, char *argv[] )  {
     }
     var_beginTrain = FALSE;
     pthread_mutex_unlock( &mutex_beginTrain);
-    */
+
 
     printf("Train: I received the signal from the last passenger to start\n");
  
@@ -301,8 +285,7 @@ int main( int argc, char *argv[] )  {
  
    printf("Train: I reached the destination\n**************************************\n\n"); 
 
-   printf("R1 is %d, R2 is %d\n", R_n1, R_n2); 
-  
+   
    /*
     * Now put these passengers out of the train
     */

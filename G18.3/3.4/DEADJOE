@@ -1,0 +1,45 @@
+
+*** These modified files were found in JOE when it aborted on Wed Nov 29 21:01:29 2017
+*** JOE was aborted by UNIX signal 15
+
+*** File 'test.c'
+#include <stdio.h>
+#include <pthread.h>
+#include "semlib.h"
+
+#define CCR_DECLARE(label) \
+          bsem R_mtx, R_q1, R_q2; \
+          int R_n1=0, R_n2=0;printf("%d%d\n",R_n1,R_n2); \
+          mybsem_init(R_mtx,1);mybsem_init(&R_q1,0);mybsem_init(&R_q2,0);          
+          
+          
+
+int main(int argc, char *argv[]) {
+
+  CCR_DECLARE(label);
+
+
+  return 0;
+}
+*** File '(Unnamed)'
+golden
+f_in
+
+*** File '(Unnamed)'
+test.c
+test.c
+test.c
+semlib.h
+test.c
+test.c
+test.c
+test.c
+test.c
+test.c
+test.c
+
+*** File '* Startup Log *'
+Processing '/etc/joe/joerc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/joerc
