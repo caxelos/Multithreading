@@ -13,22 +13,22 @@
 
 
 #define CCR_DECLARE(label) \
-          volatile int label_mode = 0,label_train_var=FALSE;pthread_mutex_t label_mtx,label_train_mtx; \
-          pthread_cond_t label_condvar,label_train_cond;             
+          volatile int label##_mode = 0,label##_train_var=FALSE;pthread_mutex_t label##_mtx,label_train_mtx; \
+          pthread_cond_t label##_condvar,label_train_cond;             
           
 #define CCR_INIT(label) \
-          pthread_mutex_init( &label_mtx, NULL ); \
+          pthread_mutex_init( &label##_mtx, NULL ); \
           pthread_mutex_init( &label_train_mtx, NULL );
           //var = FALSE;
           
 
 #define CCR_EXEC(label,cond,body) \
-          pthread_mutex_lock( &label_mtx );\
+          pthread_mutex_lock( &label##_mtx );\
           while (cond == FALSE)  { \
-            pthread_cond_wait( &label_condvar, &label_mtx); \
+            pthread_cond_wait( &label##_condvar, &label##_mtx); \
           } \
           body \
-          pthread_mutex_unlock( &label_mtx ); \
+          pthread_mutex_unlock( &label##_mtx ); \
             
 
 
