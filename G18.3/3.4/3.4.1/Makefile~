@@ -1,0 +1,2 @@
+mandelGUI: mandelGUI.c mandelCore.c  semlib.c mandelThreaded.h mandelCore.h semlib.h
+	gcc  -Wall -g mandelGUI.c mandelCore.c semlib.c -o mandelGUI -lpthread -lX11
