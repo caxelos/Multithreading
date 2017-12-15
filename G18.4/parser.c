@@ -15,6 +15,7 @@
 #define MAX_WORDS_PER_LINE 6
 #define MAX_WORD_LENGTH 30
 #define MAX_PRINT_LENGTH 30
+#define MAX_LABELS 30
 
 
 
@@ -32,11 +33,15 @@
 	if (check_if_var( token ) == 1) \
 		if ( checkIfInteger( token ) == FALSE )   return 1;
 
-#define CHECK_IF_LABEL_EXISTS(label) \
-	if (find_pc_from_label() == -1 ) return
-    
 
-//enum instructions {LOAD, STORE, SET, ADD, SUB, MUL, DIV, MOD, BRGT, BRGE, BRLT, BRLE, BREQ, BRA, DOWN, UP, SLEEP, PRINT, RETURN};
+	
+ 
+
+unsigned int labels[MAX_LABELS][2]; //arxikopoihsh me /0 ???
+int labelCounter = 0;       
+//find_pc_from_label(char *label, int **labels, int numOfLabels)
+
+
 
 int checkIfInteger(char *str){//akurh????
          
@@ -120,7 +125,7 @@ int check_if_var( char *token )  {
  * - Find the hash of the label
  * - If the hash doesn't exist, return error code
  */
-int find_pc_from_label(char *label, int **labels, int numOfLabels)  {
+int find_pc_from_label(char *label)  {
 	int i;
 	unsigned long hash = 5381;
 	char c;
@@ -131,7 +136,7 @@ int find_pc_from_label(char *label, int **labels, int numOfLabels)  {
       		j++;
  	}
  	
- 	for (i = 0; i < numOfLabels; i++)  {
+ 	for (i = 0; i < labelCounter; i++)  {
    		if ( labels[i][0] == hash )
 			return labels[i][1];//return the programm counter
 	}
@@ -247,16 +252,16 @@ int checkSyntax(char token[MAX_WORDS_PER_LINE][MAX_WORD_LENGTH]){  //inline int 
 	/*
 	 * 3rd parameter: label
 	 */
-	CHECK_IF_LABEL_EXISTS(token[3]);
- 
+	if (find_pc_from_label(token[3]) == -1 )  
+		return 1;
         
     }
     else if  ( strcmp(instruction, "BRA") == 0 )  {
 	/*
 	 * 1st parameter: label
 	 */
-	 CHECK_IF_LABEL_EXISTS(token[1]); 
-
+	 if (find_pc_from_label(token[1]) == -1 )  
+		return 1;
 
     }
     else if(strcmp(instruction, "DOWN") == 0){
@@ -316,7 +321,7 @@ int main(int argc, char *argv[] ){
     int c, i, j, k, 
         pc,
         totalLines,
-        labelCounter,
+    //    labelCounter,
         arg1,
         arg2,
         arg3;
@@ -334,7 +339,7 @@ int main(int argc, char *argv[] ){
     //metrame grammes arxeious
     totalLines = countLines(argv[1]); 
     char token[totalLines][MAX_WORDS_PER_LINE][MAX_WORD_LENGTH]; 
-    unsigned int labels[totalLines][2]; //arxikopoihsh me /0 ???
+    //unsigned int labels[totalLines][2]; //arxikopoihsh me /0 ???
     
 	FILE* fp = fopen(argv[1], "r");
     if(fp == NULL) {
@@ -389,13 +394,13 @@ int main(int argc, char *argv[] ){
     }
 
    	
-
+    fseek( fp, 0, SEEK_SET );
 /******************** COMPILE **********************************************************/
     pc = 0; //program counter
     //labelCounter = 0;
     while (pc <= totalLines){ //for every line
         
-        if (fgets(line, 200, fp) == NULL) 
+        if (fgets(line, 200, fp) == NULL)
             break;  //end of file
              
         /***** TOKENS ON THE SAME LINE********/
@@ -438,6 +443,10 @@ int main(int argc, char *argv[] ){
         }
         
         
+	if ( checkSyntax(token[pc]) == 1 ) {
+		return 1;
+	}
+
         //debugging print
         for(j=0; token[pc][j][0] != '\0'; j++){
             printf("%d: %s\n", j, token[pc][j]);
@@ -451,15 +460,14 @@ int main(int argc, char *argv[] ){
     }
 
  
-   
-    	    
     if(strcmp(token[0][0], "#PROGRAM")){
+	printf("it is %s\n", token[0][0]);
         printf("Wrong syntax at line 0. \"#PROGRAM\" is needed. Exiting\n");
         return(1);
     }
 
 /********************** RUN **********************************************************/
-
+return 0;
 
 pc = 1;
 
